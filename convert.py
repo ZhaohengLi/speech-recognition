@@ -23,14 +23,16 @@ def convert():
     begin = timer()
     data_convert = []
 
-    for data in data_original[0:3]:
+    for data in data_original:
         name = data[0]
         array = librosa.resample(data[1], data[2], target_rate)
         if to_mono:
             array = librosa.to_mono(array)
         data_convert.append((name, array, target_rate))
-        if len(data_convert)/len(data_original)-percentage > 0.5:
-            log('Now converted {}. Cost time {}'.format(len(data_convert), timer()-begin))
+        if len(data_convert)/len(data_original)-percentage > 0.05:
+            percentage = len(data_convert) / len(data_original)
+            log('Now converted {} ({}%). Cost time {}'.format(len(data_convert), percentage*100, timer()-begin))
+
 
     with open(output_file, 'wb') as file:
         pickle.dump(data_convert, file)

@@ -4,6 +4,9 @@ import sys
 import json
 import base64
 import time
+import pickle
+import soundfile
+import librosa
 
 IS_PY3 = sys.version_info.major == 3
 
@@ -28,10 +31,13 @@ API_KEY = 'kVcnfD9iW2XVZSMaLMrtLYIz'
 SECRET_KEY = 'O9o1O213UgG5LFn0bDGNtoRN3VWl2du6'
 
 # 需要识别的文件
-AUDIO_FILE = './audio/16k.wav'  # 只支持 pcm/wav/amr 格式，极速版额外支持m4a 格式
+OUTPUT_FILE = './output/asr_result.pickle'
+LOG_FILE_1 = './log/asr_log.txt'
+LOG_FILE_2 = './log/asr_connect_log.txt'
+PICKLE_FILE = './output/data_16000_mono'
+AUDIO_FILE = './audio/temp.wav'  # 只支持 pcm/wav/amr 格式，极速版额外支持m4a 格式
 # 文件格式
 FORMAT = AUDIO_FILE[-3:]  # 文件后缀只支持 pcm/wav/amr 格式，极速版额外支持m4a 格式
-
 CUID = '123456PYTHON'
 # 采样率
 RATE = 16000  # 固定值
@@ -76,26 +82,39 @@ def fetch_token():
         f = urlopen(req)
         result_str = f.read()
     except URLError as err:
-        print('token http response http code : ' + str(err.code))
+        log(LOG_FILE_2, 'token http response http code : ' + str(err.code))
         result_str = err.read()
     if (IS_PY3):
         result_str =  result_str.decode()
 
-    print(result_str)
+    log(LOG_FILE_2, result_str)
     result = json.loads(result_str)
-    print(result)
+    log(LOG_FILE_2, result)
     if ('access_token' in result.keys() and 'scope' in result.keys()):
-        print(SCOPE)
+        log(LOG_FILE_2, SCOPE)
         if SCOPE and (not SCOPE in result['scope'].split(' ')):  # SCOPE = False 忽略检查
             raise DemoError('scope is not correct')
-        print('SUCCESS WITH TOKEN: %s  EXPIRES IN SECONDS: %s' % (result['access_token'], result['expires_in']))
+        log(LOG_FILE_2, 'SUCCESS WITH TOKEN: %s  EXPIRES IN SECONDS: %s' % (result['access_token'], result['expires_in']))
         return result['access_token']
     else:
         raise DemoError('MAYBE API_KEY or SECRET_KEY not correct: access_token or scope not found in token response')
 
+
 """  TOKEN end """
 
-if __name__ == '__main__':
+
+def log(file, msg, init=False):
+    mode = ''
+    if init:
+        mode = 'w'
+    else:
+        mode = 'a'
+    with open(file, mode) as file:
+        file.write(str(msg))
+        file.write('\n')
+
+
+def asr():
     token = fetch_token()
 
     speech_data = []
@@ -109,7 +128,7 @@ if __name__ == '__main__':
     if (IS_PY3):
         speech = str(speech, 'utf-8')
     params = {'dev_pid': DEV_PID,
-             #"lm_id" : LM_ID,    #测试自训练平台开启此项
+              # "lm_id" : LM_ID,    #测试自训练平台开启此项
               'format': FORMAT,
               'rate': RATE,
               'token': token,
@@ -126,13 +145,49 @@ if __name__ == '__main__':
         begin = timer()
         f = urlopen(req)
         result_str = f.read()
-        print ("Request time cost %f" % (timer() - begin))
+        log(LOG_FILE_2, "Request time cost %f" % (timer() - begin))
     except URLError as err:
-        print('asr http response http code : ' + str(err.code))
+        log(LOG_FILE_2, 'asr http response http code : ' + str(err.code))
         result_str = err.read()
 
     if (IS_PY3):
         result_str = str(result_str, 'utf-8')
-    print(result_str)
-    with open("result.txt","w") as of:
-        of.write(result_str)
+    log(LOG_FILE_2, result_str)
+    return result_str
+
+
+def run():
+    pickle_data = pickle.load(open(PICKLE_FILE, 'rb'))
+    log(LOG_FILE_1, 'Pickle data length is {}'.format(len(pickle_data)))
+
+    percentage = 0
+    begin = timer()
+    data_convert = []
+
+    result = {}
+    for data in pickle_data:
+        soundfile.write(AUDIO_FILE, data[1], RATE, 'PCM_16', 'LITTLE', 'WAV')
+        json_result = json.loads(asr())
+        if json_result['err_no'] == 0:
+            result[data[0]] = json_result['result'][0]
+        else:
+            log(LOG_FILE_1, 'When processing {}, something went wrong. \n{}'.format(data[0], json_result))
+        time.sleep(1)
+        if len(result)/len(pickle_data)-percentage > 0.05:
+            percentage = len(result)/len(pickle_data)
+            log(LOG_FILE_1, 'Now converted {} ({}%). Cost time {}'.format(len(result), percentage*100, timer()-begin))
+
+
+    with open(OUTPUT_FILE, 'wb') as file:
+        pickle.dump(result, file)
+    log(LOG_FILE_1, 'ASR data length is {}. All finished.'.format(len(result)))
+
+
+if __name__ == '__main__':
+    log(LOG_FILE_1, 'Time: ' + str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())), True)
+    log(LOG_FILE_2, 'Time: ' + str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())), True)
+    log(LOG_FILE_1, 'File(s): ' + str(PICKLE_FILE))
+    log(LOG_FILE_1, 'Output_file: ' + OUTPUT_FILE)
+    print("Program asr_json.py is now running.\nSee {} and {} for more information.".format(LOG_FILE_1, LOG_FILE_2))
+    run()
+    print("Program asr_json.py is now finished.")
