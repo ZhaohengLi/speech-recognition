@@ -27,11 +27,11 @@ else:
         # On most other platforms the best timer is time.time()
         timer = time.time
 
-API_KEY = 'kVcnfD9iW2XVZSMaLMrtLYIz'
-SECRET_KEY = 'O9o1O213UgG5LFn0bDGNtoRN3VWl2du6'
+API_KEY = 'sjkIptvuwbWbmANnNoPuk8Fu'
+SECRET_KEY = '2VKNjrvTFB75RO3AsR6pzEi4wVri7aif'
 
 # 需要识别的文件
-OUTPUT_FILE = './output/asr_result.pickle'
+OUTPUT_FILE = './output/asr_result'
 LOG_FILE_1 = './log/asr_log.txt'
 LOG_FILE_2 = './log/asr_connect_log.txt'
 PICKLE_FILE = './output/data_16000_mono'
@@ -165,22 +165,47 @@ def run():
     data_convert = []
 
     result = {}
+    error_lines = []
+
     for data in pickle_data:
-        soundfile.write(AUDIO_FILE, data[1], RATE, 'PCM_16', 'LITTLE', 'WAV')
-        json_result = json.loads(asr())
-        if json_result['err_no'] == 0:
-            result[data[0]] = json_result['result'][0]
-        else:
-            log(LOG_FILE_1, 'When processing {}, something went wrong. \n{}'.format(data[0], json_result))
-        time.sleep(1)
-        if len(result)/len(pickle_data)-percentage > 0.05:
-            percentage = len(result)/len(pickle_data)
-            log(LOG_FILE_1, 'Now converted {} ({}%). Cost time {}'.format(len(result), percentage*100, timer()-begin))
+        try:
+            soundfile.write(AUDIO_FILE, data[1], RATE, 'PCM_16', 'LITTLE', 'WAV')
+
+            http_result = asr()
+            if not http_result:
+                log(LOG_FILE_1, 'When processing {}, got empty http result.'.format(data[0]))
+                error_lines.append(data[0])
+                continue
+
+            json_result = json.loads(asr())
+            if json_result['err_no'] == 0:
+                result[data[0]] = json_result['result'][0]
+            else:
+                log(LOG_FILE_1, 'When processing {}, something went wrong. \n{}'.format(data[0], json_result))
+                error_lines.append(data[0])
+
+            time.sleep(1)
+            if len(result) / len(pickle_data) - percentage > 0.02:
+                percentage = len(result) / len(pickle_data)
+                write_result("{}_{:.3}".format(OUTPUT_FILE, percentage), result)
+                write_result("{}_error_lines_{:.3}".format(OUTPUT_FILE, percentage), error_lines)
+                log(LOG_FILE_1, 'Now converted {} ({}%). Cost time {}'.format(len(result), percentage * 100, timer() - begin))
+
+        except Exception as e:
+            log(LOG_FILE_1, 'When processing {}, something UNEXPECTED went wrong.'.format(data[0]))
+            error_lines.append(data[0])
+            print(str(e))
+
+    write_result(OUTPUT_FILE, result)
+    write_result(OUTPUT_FILE + "_error_lines", error_lines)
+
+    log(LOG_FILE_1, 'ASR succeed data length is {}. All finished.'.format(len(result)))
+    log(LOG_FILE_1, 'ASR failed data length is {}. All finished.'.format(len(error_lines)))
 
 
-    with open(OUTPUT_FILE, 'wb') as file:
-        pickle.dump(result, file)
-    log(LOG_FILE_1, 'ASR data length is {}. All finished.'.format(len(result)))
+def write_result(file_name, out):
+    with open(file_name, 'wb') as file:
+        pickle.dump(out, file)
 
 
 if __name__ == '__main__':

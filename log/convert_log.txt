@@ -1,7 +1,0 @@
-Time: 2020-04-02 21:28:11
-File(s): ['/Users/lizhaoheng/Downloads/data_original_0']
-Target Rate: 16000
-To Mono: True
-Output file: ./output/data_16000_mono
-Original data length is 25000
-Converted data length is 20. All finished.

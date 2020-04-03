@@ -1,4 +1,0 @@
-Time: 2020-04-02 22:48:34
-File(s): ./output/data_16000_mono
-Output_file: ./output/asr_result.pickle
-Pickle data length is 20

@@ -33,7 +33,6 @@ def convert():
             percentage = len(data_convert) / len(data_original)
             log('Now converted {} ({}%). Cost time {}'.format(len(data_convert), percentage*100, timer()-begin))
 
-
     with open(output_file, 'wb') as file:
         pickle.dump(data_convert, file)
 
