@@ -2,10 +2,13 @@ import pickle
 import re
 import csv
 import itertools
+from sentence_distance import *
 
 scenes = ['near_soft', 'near_loud', 'far', 'whisper']
 USER_NUM = 102
 SENTENCE_NUM = 119
+SCENE_NUM = len(scenes)
+
 
 def emb_numbers(s):
     re_digits = re.compile(r'(\d+)')
@@ -68,6 +71,7 @@ def check_num():
     file.close()
 
     file_e_w = open('./output/num_error.txt', 'w')
+    user_error = set()
     for user in range(1, USER_NUM+1):
         group = get_group(user)
         for scene in scenes:
@@ -84,7 +88,13 @@ def check_num():
             csv_writer.writerows(itertools.zip_longest(asr_result, correct_answer, fillvalue=""))
             if len(asr_result) != SENTENCE_NUM:
                 file_e_w.write("{}\tuser-{}-scene-{}\n".format(len(asr_result)-SENTENCE_NUM, user, scene_num))
+                user_error.add(user)
     file_e_w.close()
+
+    file = open('./output/user_error.txt', 'w')
+    for user in user_error:
+        file.write(str(user)+"\n")
+    file.close()
 
 
 def get_answer(group, scene_num):
@@ -98,7 +108,47 @@ def get_answer(group, scene_num):
     return answer
 
 
+def cal_similarity():
+    for user in range(1, USER_NUM+1):
+        for scene in range(1, SCENE_NUM+1):
+            csv_reader = csv.DictReader(open("./output/separated/user-{}-scene-{}.csv".format(user, scene), 'r'))
+            csv_writer = csv.writer(open("./output/similarity/user-{}-scene-{}-sentiment.csv".format(user, scene), 'w'))
+            header = ['asr_result', 'correct_answer', 'similarity']
+            csv_writer.writerow(header)
+            for row in csv_reader:
+                sen1 = re.sub(r'[，。？！]', "", row["asr_result"]).lower()
+                sen2 = re.sub(r'[，。？！]', "", row["correct_answer"]).lower()
+                similarity = sentence_distance(sen1, sen2)
+                csv_writer.writerow([sen1, sen2, similarity])
+
+
+def check_sentiment():
+    file = open("./output/sentiment_error.txt", 'w')
+    user_error = set()
+    with open('./output/user_error.txt', 'r') as f:
+        for line in f.readlines():
+            user_error.add(int(line))
+
+    for user in range(1, USER_NUM+1):
+        for scene in range(1, SCENE_NUM+1):
+            csv_reader = csv.DictReader(open("./output/similarity/user-{}-scene-{}-sentiment.csv".format(user, scene), 'r'))
+            cnt = 0
+            for row in csv_reader:
+                if float(row['similarity']) < 0.7:
+                    cnt += 1
+            if cnt > 10:
+                file.write("{}\tuser-{}-scene-{}\n".format(cnt, user, scene))
+                user_error.add(user)
+    file.close()
+
+    file = open('./output/user_error.txt', 'w')
+    for user in user_error:
+        file.write(str(user) + "\n")
+    file.close()
+
+
 if __name__ == '__main__':
-    convert()
-    check_num()
-    # get_answer()
+    # convert()
+    # check_num()
+    # cal_similarity()
+    check_sentiment()
