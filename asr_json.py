@@ -34,7 +34,7 @@ SECRET_KEY = '2VKNjrvTFB75RO3AsR6pzEi4wVri7aif'
 OUTPUT_FILE = './output/asr_result'
 LOG_FILE_1 = './log/asr_log.txt'
 LOG_FILE_2 = './log/asr_connect_log.txt'
-PICKLE_FILE = './output/data_16000_mono'
+PICKLE_FILE = 'output/data_16000_mono.pickle'
 AUDIO_FILE = './audio/temp.wav'  # 只支持 pcm/wav/amr 格式，极速版额外支持m4a 格式
 # 文件格式
 FORMAT = AUDIO_FILE[-3:]  # 文件后缀只支持 pcm/wav/amr 格式，极速版额外支持m4a 格式

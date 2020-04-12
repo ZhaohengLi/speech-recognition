@@ -1,0 +1,26 @@
+./user5/near_soft/新录音 110.m4a
+./user10/near_soft/新录音 62.m4a
+./user25/whisper/新录音 457.mp3
+./user26/near_loud/20200308_003006.m4a
+./user32/far/录音-262.aac
+./user52/near_loud/REC20200306141137.mp3
+./user53/near_soft/6 (38).m4a
+./user55/far/music_REC20200308154719.mp3
+./user56/near_soft/20200308_145628.m4a
+./user58/far/20200308 140822.m4a
+./user61/far/3月4日 下午1点43分(2).mp3
+./user62/whisper/3月6日 22点12分(3).mp3
+./user62/whisper/3月6日 22点16分(7).mp3
+./user64/near_soft/20200307_154833.m4a
+./user65/far/119.m4a
+./user75/whisper/20200308_174232.m4a
+./user75/whisper/20200308_174344.m4a
+./user75/whisper/20200308_174507.m4a
+./user89/whisper/四平市 454.m4a
+./user92/whisper/20200309_134027.m4a
+./user95/far/音频录制2020-03-09 18-40-35.wav
+./user95/far/音频录制2020-03-09 18-44-43.wav
+./user95/far/音频录制2020-03-09 18-45-19.wav
+./user98/near_loud/25.m4a
+./user101/near_soft/20200309 194827.m4a
+./user102/far/20200311_120819.m4a
